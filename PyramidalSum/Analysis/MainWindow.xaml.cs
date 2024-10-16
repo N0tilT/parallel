@@ -35,21 +35,19 @@ namespace Analysis
 
         private void PerformBenchmark()
         {
-            List<int> sizes = Enumerable.Range(1, Environment.ProcessorCount).Select(i => i * 100000).ToList();
-            sizes.Add(int.MaxValue - 100);
             AxisXLabels.Clear();
             Series.Clear();
 
-            var parallelTimes = new ChartValues<double>();
+            var parallelTimes = new List<ChartValues<double>>() { new(),new(),new(), new() };
+            var parallelTasksTimes = new List<ChartValues<double>>() { new(), new(), new(), new() };
             var syncTimes = new ChartValues<double>();
             Summator summator = new Summator();
 
-            foreach (var size in sizes)
+            for(int i = 4;i<=9;i++)
             {
                 Random random = new Random();
-                List<long> numbers = Enumerable.Range(0, size).Select(i => (long)random.Next(0, 1000)).ToList();
+                List<long> numbers = Enumerable.Range(0, (int)Math.Pow(10,i)).Select(i => (long)random.Next(0, 100)).ToList();
 
-                // Измеряем время выполнения SyncSum
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
                 long syncSumResult = summator.SyncSum(numbers);
@@ -57,18 +55,26 @@ namespace Analysis
                 double syncTime = stopwatch.Elapsed.TotalMilliseconds;
                 syncTimes.Add(syncTime);
 
-                // Измеряем время выполнения ParallelSum с разным количеством потоков
-                for (int threadCount = 1; threadCount <= Environment.ProcessorCount; threadCount++)
+                for (int threadCount = 5; threadCount <= 8; threadCount++)
                 {
                     stopwatch.Restart();
                     long parallelSumResult = summator.ParallelSum(numbers, threadCount);
                     stopwatch.Stop();
                     double parallelTime = stopwatch.Elapsed.TotalMilliseconds;
-                    parallelTimes.Add(parallelTime);
+                    parallelTimes[threadCount-5].Add(parallelTime);
+                }
+
+                for (int threadCount = 5; threadCount <= 8; threadCount++)
+                {
+                    stopwatch.Restart();
+                    long parallelSumResult = summator.ParallelSumTasks(numbers, threadCount);
+                    stopwatch.Stop();
+                    double parallelTime = stopwatch.Elapsed.TotalMilliseconds;
+                    parallelTasksTimes[threadCount - 5].Add(parallelTime);
                 }
 
                 // Добавляем метку для оси X
-                AxisXLabels.Add($"Size: {size.ToString()}");
+                AxisXLabels.Add($"Size: {(int)Math.Pow(10,i)}");
             }
 
             // Добавляем линии для параллельного и синхронного суммирования
@@ -79,14 +85,18 @@ namespace Analysis
                 PointGeometry = null // Можно скрыть точки, если не нужно
             });
 
-            for (int i = 1; i <= Environment.ProcessorCount; i++)
+            for (int i = 0; i <= 3; i++)
             {
-                var valuesForThreadCount = parallelTimes.Where((v, index) => index % Environment.ProcessorCount == i - 1).ToList();
-
                 Series.Add(new LineSeries
                 {
-                    Title = $"Параллельная сумма ({i} потоков)",
-                    Values = new ChartValues<double>(valuesForThreadCount), // Создаем новый ChartValues<double>
+                    Title = $"Параллельная сумма ({i+5} потоков)",
+                    Values = new ChartValues<double>(parallelTimes[i]), // Создаем новый ChartValues<double>
+                    PointGeometry = null
+                });
+                Series.Add(new LineSeries
+                {
+                    Title = $"Параллельная сумма ({i + 5} потоков)",
+                    Values = new ChartValues<double>(parallelTasksTimes[i]), // Создаем новый ChartValues<double>
                     PointGeometry = null
                 });
             }
