@@ -1,32 +1,97 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Pyramidal.Core
 {
     public class Summator
     {
+
+        public long ParallelSumTasks(List<long> numbers, int threadCount)
+        {
+            if (numbers == null || numbers.Count == 0)
+                return 0;
+
+            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
+            int originalCount = numbers.Count;
+            int remainder = originalCount % threadCount;
+            if (remainder != 0)
+            {
+                int elementsToAdd = threadCount - remainder;
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+            }
+
+            long totalSum = 0;
+            Task[] tasks = new Task[threadCount];
+            ConcurrentBag<long> sums = new ConcurrentBag<long>();
+
+            int chunkSize = numbers.Count / threadCount;
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int start = i * chunkSize;
+                int end = start + chunkSize;
+
+                // Создаем задачу для суммирования в каждом чанке
+                tasks[i] = Task.Run(() =>
+                {
+                    long sum = 0;
+                    for (int j = start; j < end; j++)
+                    {
+                        sum += numbers[j];
+                    }
+                    sums.Add(sum);
+                });
+            }
+            foreach (var task in tasks)
+            {
+                task.Wait();
+            }
+            totalSum = sums.Sum();
+
+            return totalSum;
+        }
+
         public long ParallelSum(List<long> numbers, int threadCount)
         {
-            int chunkSize = (numbers.Count + threadCount - 1) / threadCount; 
-            var sums = new long[threadCount];
+            if (numbers == null || numbers.Count == 0)
+                return 0;
+
+            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
+            int originalCount = numbers.Count;
+            int remainder = originalCount % threadCount;
+            if (remainder != 0)
+            {
+                int elementsToAdd = threadCount - remainder;
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+            }
+
+            long totalSum = 0;
+            var tasks = new List<Task<long>>();
+
+            int chunkSize = numbers.Count / threadCount;
+            ConcurrentBag<long> sums = new ConcurrentBag<long>();
             Thread[] threads = new Thread[threadCount];
 
             for (int i = 0; i < threadCount; i++)
             {
+                int start = i * chunkSize;
+                int end = start + chunkSize;
                 int index = i;
                 threads[index] = new Thread(() =>
                 {
-                    var chunk = numbers.Skip(index * chunkSize).Take(chunkSize);
+
                     long sum = 0;
-                    for (int j = 0; j < chunk.Count(); j++)
+                    for (int j = start; j < end; j++)
                     {
-                        sum += chunk.ElementAt(j);
+                        sum += numbers[j];
                     }
-                    sums[index] = sum;
+                    sums.Add(sum);
                 });
                 threads[index].Start();
             }
@@ -34,36 +99,6 @@ namespace Pyramidal.Core
             foreach (var thread in threads)
             {
                 thread.Join(); 
-            }
-
-            return sums.Sum();
-        }
-
-        public long ParallelSumTasks(List<long> numbers, int threadCount)
-        {
-            int chunkSize = (numbers.Count + threadCount - 1) / threadCount;
-            var sums = new long[threadCount];
-            Task[] threads = new Task[threadCount];
-
-            for (int i = 0; i < threadCount; i++)
-            {
-                int index = i;
-                threads[index] = new Task(() =>
-                {
-                    var chunk = numbers.Skip(index * chunkSize).Take(chunkSize);
-                    long sum = 0;
-                    for (int j = 0; j < chunk.Count(); j++)
-                    {
-                        sum += chunk.ElementAt(j);
-                    }
-                    sums[index] = sum;
-                });
-                threads[index].Start();
-            }
-
-            foreach (var thread in threads)
-            {
-                thread.Wait();
             }
 
             return sums.Sum();
@@ -79,5 +114,94 @@ namespace Pyramidal.Core
             return sum;
         }
 
+        public long ParallelSumTasksRecursive(List<long> numbers, int threadCount)
+        {
+            if (numbers == null || numbers.Count == 0)
+                return 0;
+
+            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
+            int originalCount = numbers.Count;
+            int remainder = originalCount % threadCount;
+            if (remainder != 0)
+            {
+                int elementsToAdd = threadCount - remainder;
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+            }
+
+            long totalSum = 0;
+            Task[] tasks = new Task[threadCount];
+            ConcurrentBag<long> sums = new ConcurrentBag<long>();
+
+            int chunkSize = numbers.Count / threadCount;
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int start = i * chunkSize;
+                int end = start + chunkSize;
+
+                // Создаем задачу для суммирования в каждом чанке
+                tasks[i] = Task.Run(() =>
+                {
+                    long sum = 0;
+                    for (int j = start; j < end; j++)
+                    {
+                        sum += numbers[j];
+                    }
+                    sums.Add(sum);
+                });
+            }
+            foreach (var task in tasks)
+            {
+                task.Wait();
+            }
+
+            return sums.Count() > 100 ? ParallelSumRecursive(sums.ToList(), threadCount) : sums.Sum();
+        }
+
+        public long ParallelSumRecursive(List<long> numbers, int threadCount)
+        {
+            if (numbers == null || numbers.Count == 0)
+                return 0;
+
+            int originalCount = numbers.Count;
+            int remainder = originalCount % threadCount;
+            if (remainder != 0)
+            {
+                int elementsToAdd = threadCount - remainder;
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd));
+            }
+
+            long totalSum = 0;
+            var tasks = new List<Task<long>>();
+
+            int chunkSize = numbers.Count / threadCount;
+            ConcurrentBag<long> sums = new ConcurrentBag<long>();
+            Thread[] threads = new Thread[threadCount];
+
+            for (int i = 0; i < threadCount; i++)
+            {
+                int start = i * chunkSize;
+                int end = start + chunkSize;
+                int index = i;
+                threads[index] = new Thread(() =>
+                {
+
+                    long sum = 0;
+                    for (int j = start; j < end; j++)
+                    {
+                        sum += numbers[j];
+                    }
+                    sums.Add(sum);
+                });
+                threads[index].Start();
+            }
+
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+
+            return sums.Count() > 100 ? ParallelSumRecursive(sums.ToList(),threadCount) : sums.Sum();
+        }
     }
 }

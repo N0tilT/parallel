@@ -26,27 +26,44 @@ namespace Analysis
             InitializeComponent();
             Series = new SeriesCollection();
             chart.Series = Series;
+
+            for (int i = 1; i <= Environment.ProcessorCount; i++)
+            {
+                comboBoxThreadCount.Items.Add(new ComboBoxItem { Content = i });
+            }
+
+            comboBoxThreadCount.SelectedIndex = 0;
         }
 
         private void btnRun_Click(object sender, RoutedEventArgs e)
         {
-            PerformBenchmark();
+            int selectedThreadCount = int.Parse((comboBoxThreadCount.SelectedItem as ComboBoxItem).Content.ToString());
+
+            // Получаем параметры тестирования
+            int startValue = int.Parse(textBoxStartValue.Text);
+            int step = int.Parse(textBoxStep.Text);
+            int maxValue = int.Parse(textBoxMaxValue.Text);
+
+            PerformBenchmark(selectedThreadCount, startValue, step, maxValue);
+
         }
 
-        private void PerformBenchmark()
+        private void PerformBenchmark(int selectedThreadCount, int startValue, int step, int maxValue)
         {
             AxisXLabels.Clear();
             Series.Clear();
 
-            var parallelTimes = new List<ChartValues<double>>() { new(),new(),new(), new() };
-            var parallelTasksTimes = new List<ChartValues<double>>() { new(), new(), new(), new() };
+            var parallelTimes = new ChartValues<double>();
+            var parallelTasksTimes = new ChartValues<double>();
+            var parallelTimesRecursive = new ChartValues<double>();
+            var parallelTasksTimesRecursive = new ChartValues<double>();
             var syncTimes = new ChartValues<double>();
             Summator summator = new Summator();
 
-            for(int i = 4;i<=9;i++)
+            for (int i = startValue; i <= maxValue; i += step)
             {
                 Random random = new Random();
-                List<long> numbers = Enumerable.Range(0, (int)Math.Pow(10,i)).Select(i => (long)random.Next(0, 100)).ToList();
+                List<long> numbers = Enumerable.Range(0, i).Select(i => (long)random.Next(0, 100)).ToList();
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -55,54 +72,75 @@ namespace Analysis
                 double syncTime = stopwatch.Elapsed.TotalMilliseconds;
                 syncTimes.Add(syncTime);
 
-                for (int threadCount = 5; threadCount <= 8; threadCount++)
-                {
-                    stopwatch.Restart();
-                    long parallelSumResult = summator.ParallelSum(numbers, threadCount);
-                    stopwatch.Stop();
-                    double parallelTime = stopwatch.Elapsed.TotalMilliseconds;
-                    parallelTimes[threadCount-5].Add(parallelTime);
-                }
+                // Параллельное суммирование
+                stopwatch.Restart();
+                long parallelSumResult = summator.ParallelSum(numbers, selectedThreadCount);
+                stopwatch.Stop();
+                double parallelSumTime = stopwatch.Elapsed.TotalMilliseconds;
+                parallelTimes.Add(parallelSumTime);
 
-                for (int threadCount = 5; threadCount <= 8; threadCount++)
-                {
-                    stopwatch.Restart();
-                    long parallelSumResult = summator.ParallelSumTasks(numbers, threadCount);
-                    stopwatch.Stop();
-                    double parallelTime = stopwatch.Elapsed.TotalMilliseconds;
-                    parallelTasksTimes[threadCount - 5].Add(parallelTime);
-                }
+                // Параллельное суммирование с задачами
+                stopwatch.Restart();
+                long parallelTasksSumResult = summator.ParallelSumTasks(numbers, selectedThreadCount);
+                stopwatch.Stop();
+                double parallelTasksTime = stopwatch.Elapsed.TotalMilliseconds;
+                parallelTasksTimes.Add(parallelTasksTime);
+
+
+                // Параллельное суммирование
+                stopwatch.Restart();
+                long parallelSumResultRecursive = summator.ParallelSumRecursive(numbers, selectedThreadCount);
+                stopwatch.Stop();
+                double parallelSumTimeRecursive = stopwatch.Elapsed.TotalMilliseconds;
+                parallelTimesRecursive.Add(parallelSumTimeRecursive);
+
+                // Параллельное суммирование с задачами
+                stopwatch.Restart();
+                long parallelTasksSumResultRecursive = summator.ParallelSumTasksRecursive(numbers, selectedThreadCount);
+                stopwatch.Stop();
+                double parallelTasksTimeRecursive = stopwatch.Elapsed.TotalMilliseconds;
+                parallelTasksTimesRecursive.Add(parallelTasksTimeRecursive);
 
                 // Добавляем метку для оси X
-                AxisXLabels.Add($"Size: {(int)Math.Pow(10,i)}");
+                AxisXLabels.Add($"Size: {(int)Math.Pow(10, i)}");
             }
 
-            // Добавляем линии для параллельного и синхронного суммирования
+            // Добавляем линии для синхронной и параллельной сумм
             Series.Add(new LineSeries
             {
                 Title = "Синхронная сумма",
                 Values = syncTimes,
-                PointGeometry = null // Можно скрыть точки, если не нужно
+                PointGeometry = null
             });
 
-            for (int i = 0; i <= 3; i++)
+            Series.Add(new LineSeries
             {
-                Series.Add(new LineSeries
-                {
-                    Title = $"Параллельная сумма ({i+5} потоков)",
-                    Values = new ChartValues<double>(parallelTimes[i]), // Создаем новый ChartValues<double>
-                    PointGeometry = null
-                });
-                Series.Add(new LineSeries
-                {
-                    Title = $"Параллельная сумма ({i + 5} потоков)",
-                    Values = new ChartValues<double>(parallelTasksTimes[i]), // Создаем новый ChartValues<double>
-                    PointGeometry = null
-                });
-            }
+                Title = $"Параллельная сумма ({selectedThreadCount} потоков)",
+                Values = parallelTimes,
+                PointGeometry = null
+            });
+
+            Series.Add(new LineSeries
+            {
+                Title = $"Параллельная сумма задачами ({selectedThreadCount} потоков)",
+                Values = parallelTasksTimes,
+                PointGeometry = null
+            });
+
+            Series.Add(new LineSeries
+            {
+                Title = $"Параллельная сумма c рекурсией ({selectedThreadCount} потоков)",
+                Values = parallelTimesRecursive,
+                PointGeometry = null
+            });
+
+            Series.Add(new LineSeries
+            {
+                Title = $"Параллельная сумма задачами c рекурсией ({selectedThreadCount} потоков)",
+                Values = parallelTasksTimesRecursive,
+                PointGeometry = null
+            });
 
         }
-
-
     }
 }

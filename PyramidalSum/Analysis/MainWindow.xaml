@@ -6,13 +6,32 @@
         xmlns:local="clr-namespace:Analysis"
         mc:Ignorable="d"
          xmlns:lc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf" xmlns:livecharts="clr-namespace:LiveCharts;assembly=LiveCharts"
-        Title="Statistics" Height="450" Width="800">
+        Title="Statistics" Height="600" Width="800">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="2*"/>
         </Grid.RowDefinitions>
-        <Button Name="btnRun" Content="Запустить" Click="btnRun_Click" Width="100" Height="30" Margin="10" />
+
+        <StackPanel Orientation="Horizontal">
+            <StackPanel VerticalAlignment="Center">
+                <Label VerticalAlignment="Center" FontSize="15" Content="Количество потоков:"/>
+                <ComboBox Name="comboBoxThreadCount" Width="120" Margin="10,10,0,0" VerticalAlignment="Center" Grid.Row="0"/>
+                <!-- Поля для настроек -->
+            </StackPanel>
+            <StackPanel Orientation="Vertical" Margin="10">
+                <Label Content="Стартовое значение:" />
+                <TextBox Name="textBoxStartValue" Width="120" FontSize="15" Text=""/>
+
+                <Label Content="Шаг:" />
+                <TextBox Name="textBoxStep" Width="120" FontSize="15" Text=""/>
+
+                <Label Content="Максимальное значение:" />
+                <TextBox Name="textBoxMaxValue" Width="120" FontSize="15" Text=""/>
+            </StackPanel>
+            <Button VerticalAlignment="Center" FontSize="15"  Name="btnRun" Content="Запустить" Click="btnRun_Click" Width="100" Height="30" Margin="10" />
+        </StackPanel>
+
         <lc:CartesianChart Grid.Row="1" Name="chart" Margin="10,10,10,10" LegendLocation="{x:Static livecharts:LegendLocation.Right}">
             <lc:CartesianChart.Series>
                 <livecharts:SeriesCollection x:Name="SeriesCollection"/>

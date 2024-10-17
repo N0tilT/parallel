@@ -32,6 +32,25 @@ for (int i = 6; i < 10; i++)
         stopwatch.Stop();
         Console.WriteLine($"Результат ParallelSum: {parallelSumResult}, TaskCount: {threadCount}, Время: {stopwatch.ElapsedMilliseconds} мс");
     }
+
+    Console.WriteLine("RECURSION\n----------\n");
+    Console.WriteLine("THREADS");
+    for (int threadCount = 2; threadCount <= Environment.ProcessorCount; threadCount++)
+    {
+        stopwatch.Restart();
+        long parallelSumResult = summator.ParallelSumRecursive(numbers, threadCount);
+        stopwatch.Stop();
+        Console.WriteLine($"Результат ParallelSum: {parallelSumResult}, ThreadCount: {threadCount}, Время: {stopwatch.ElapsedMilliseconds} мс");
+    }
+    Console.WriteLine("TASKS");
+    for (int threadCount = 2; threadCount <= Environment.ProcessorCount; threadCount++)
+    {
+        stopwatch.Restart();
+        long parallelSumResult = summator.ParallelSumTasksRecursive(numbers, threadCount);
+        stopwatch.Stop();
+        Console.WriteLine($"Результат ParallelSum: {parallelSumResult}, TaskCount: {threadCount}, Время: {stopwatch.ElapsedMilliseconds} мс");
+    }
+
     Console.WriteLine("SYNCRONOUS");
     stopwatch.Restart();
     long sumResult = summator.SyncSum(numbers);
