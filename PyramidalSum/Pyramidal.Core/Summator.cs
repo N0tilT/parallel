@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace Pyramidal.Core
 {
@@ -17,13 +10,12 @@ namespace Pyramidal.Core
             if (numbers == null || numbers.Count == 0)
                 return 0;
 
-            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
             int originalCount = numbers.Count;
             int remainder = originalCount % threadCount;
             if (remainder != 0)
             {
                 int elementsToAdd = threadCount - remainder;
-                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd));
             }
 
             long totalSum = 0;
@@ -37,7 +29,6 @@ namespace Pyramidal.Core
                 int start = i * chunkSize;
                 int end = start + chunkSize;
 
-                // Создаем задачу для суммирования в каждом чанке
                 tasks[i] = Task.Run(() =>
                 {
                     long sum = 0;
@@ -62,13 +53,12 @@ namespace Pyramidal.Core
             if (numbers == null || numbers.Count == 0)
                 return 0;
 
-            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
             int originalCount = numbers.Count;
             int remainder = originalCount % threadCount;
             if (remainder != 0)
             {
                 int elementsToAdd = threadCount - remainder;
-                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd));
             }
 
             long totalSum = 0;
@@ -98,7 +88,7 @@ namespace Pyramidal.Core
 
             foreach (var thread in threads)
             {
-                thread.Join(); 
+                thread.Join();
             }
 
             return sums.Sum();
@@ -119,13 +109,12 @@ namespace Pyramidal.Core
             if (numbers == null || numbers.Count == 0)
                 return 0;
 
-            // Приводим количество элементов к ближайшему следующему, делящемуся на threadCount
             int originalCount = numbers.Count;
             int remainder = originalCount % threadCount;
             if (remainder != 0)
             {
                 int elementsToAdd = threadCount - remainder;
-                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd)); // Добавляем нули
+                numbers.AddRange(Enumerable.Repeat(0L, elementsToAdd));
             }
 
             long totalSum = 0;
@@ -139,7 +128,6 @@ namespace Pyramidal.Core
                 int start = i * chunkSize;
                 int end = start + chunkSize;
 
-                // Создаем задачу для суммирования в каждом чанке
                 tasks[i] = Task.Run(() =>
                 {
                     long sum = 0;
@@ -201,7 +189,7 @@ namespace Pyramidal.Core
                 thread.Join();
             }
 
-            return sums.Count() > 100 ? ParallelSumRecursive(sums.ToList(),threadCount) : sums.Sum();
+            return sums.Count() > 100 ? ParallelSumRecursive(sums.ToList(), threadCount) : sums.Sum();
         }
     }
 }

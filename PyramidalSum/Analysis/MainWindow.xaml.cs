@@ -1,18 +1,9 @@
-﻿using LiveCharts.Wpf;
-using LiveCharts;
+﻿using LiveCharts;
+using LiveCharts.Wpf;
+using Pyramidal.Core;
 using System.Diagnostics;
-using System.Text;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Pyramidal.Core;
 
 namespace Analysis
 {
@@ -39,7 +30,6 @@ namespace Analysis
         {
             int selectedThreadCount = int.Parse((comboBoxThreadCount.SelectedItem as ComboBoxItem).Content.ToString());
 
-            // Получаем параметры тестирования
             int startValue = int.Parse(textBoxStartValue.Text);
             int step = int.Parse(textBoxStep.Text);
             int maxValue = int.Parse(textBoxMaxValue.Text);
@@ -72,40 +62,33 @@ namespace Analysis
                 double syncTime = stopwatch.Elapsed.TotalMilliseconds;
                 syncTimes.Add(syncTime);
 
-                // Параллельное суммирование
                 stopwatch.Restart();
                 long parallelSumResult = summator.ParallelSum(numbers, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelSumTime = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTimes.Add(parallelSumTime);
 
-                // Параллельное суммирование с задачами
                 stopwatch.Restart();
                 long parallelTasksSumResult = summator.ParallelSumTasks(numbers, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelTasksTime = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTasksTimes.Add(parallelTasksTime);
 
-
-                // Параллельное суммирование
                 stopwatch.Restart();
                 long parallelSumResultRecursive = summator.ParallelSumRecursive(numbers, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelSumTimeRecursive = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTimesRecursive.Add(parallelSumTimeRecursive);
 
-                // Параллельное суммирование с задачами
                 stopwatch.Restart();
                 long parallelTasksSumResultRecursive = summator.ParallelSumTasksRecursive(numbers, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelTasksTimeRecursive = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTasksTimesRecursive.Add(parallelTasksTimeRecursive);
 
-                // Добавляем метку для оси X
                 AxisXLabels.Add($"Size: {(int)Math.Pow(10, i)}");
             }
 
-            // Добавляем линии для синхронной и параллельной сумм
             Series.Add(new LineSeries
             {
                 Title = "Синхронная сумма",
