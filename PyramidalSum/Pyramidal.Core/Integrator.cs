@@ -8,19 +8,49 @@ namespace Pyramidal.Core
 {
     public static class Integrator
     {
-        public static double Integrate(Func<double, double> func, double start, double end, double step = 0.01)
+        public static double Integrate(Func<double, double> func, double start, double end, double eps = 0.001)
+        {
+            double step = (end - start) / 2;
+            double S0 = 0, S = 0;
+            bool success = false;
+            for (double x = start; x < end; x+=step)
+            {
+                S += func(x);
+            }
+            S *= step;
+            do
+            {
+                S0 = S;
+                step /= 2;
+                S = 0;
+                for (double x = start+step; x < end; x += step*2)
+                {
+                    S += func(x);
+                }
+                S = S * step + S0 / 2;
+            }
+            while (Math.Abs(S - S0) > eps) ;
+
+            return S;
+
+        }
+        public static double IntegrateSegments(Func<double, double> func, double start, double end, double eps, int segments = 1)
         {
             double result = 0;
-            for (double x = start; x < end; x += step)
+            List<double> results = new List<double>();
+            for (double p = 0; p < segments; p++)
             {
-                result += func(x) * step;
+                for (double x = start; x < end; x += step)
+                {
+                    result += func(x) * step;
+                }
             }
             return result;
         }
 
-        public static double ParallelIntegrateThreads(int threadCount,Func<double, double> func, double start, double end, double step = 0.01)
+        public static double ParallelIntegrateThreads(int threadCount, Func<double, double> func, double start, double end, double step = 0.01)
         {
-            double range = (end-start)/threadCount;
+            double range = (end - start) / threadCount;
             double result = 0;
             object lockObj = new object();
             List<Thread> threads = new List<Thread>();
@@ -53,7 +83,7 @@ namespace Pyramidal.Core
             return result;
         }
 
-        public static double ParallelIntegrateTasks(int taskCount,Func<double, double> func, double start, double end, double step = 0.01)
+        public static double ParallelIntegrateTasks(int taskCount, Func<double, double> func, double start, double end, double step = 0.01)
         {
             double range = (end - start) / taskCount;
             var tasks = new List<Task<double>>();
