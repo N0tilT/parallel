@@ -28,11 +28,11 @@ namespace Analysis
         public List<string> AxisXLabels { get; set; } = new List<string>();
 
         List<Func<double, double>> functions = new List<Func<double, double>> {
-            (x) => x * x,
-            (x) => x * x,
-            (x) => x * x,
-            (x) => x * x,
-            (x) => x * x
+            (x) => {return (double)x/Math.Sqrt(x*x-16); },
+            (x) => {return Math.Pow(x,4)*Math.Log(x)*Math.Log(x); },
+            (x) => {return 1/(3*Math.Cos(x)*Math.Cos(x)+2*Math.Sin(x)*Math.Sin(x)); },
+            (x) => {return Math.Sqrt(x)/(Math.Pow(x,3/4)+1); },
+            (x) => {return (x * x*x - 2*x*x-12*x-7)/(x*x*x-x*x); }
         };
 
 
@@ -56,6 +56,8 @@ namespace Analysis
             comboBoxFunction.Items.Add(new ComboBoxItem { Content = "E" });
 
             comboBoxFunction.SelectedIndex = 0;
+
+
         }
 
         private void btnRun_Click(object sender, RoutedEventArgs e)
@@ -66,11 +68,11 @@ namespace Analysis
             int startValue = int.Parse(textBoxStartValue.Text);
             int maxValue = int.Parse(textBoxMaxValue.Text);
 
-            PerformBenchmark(selectedThreadCount,selectedFunctionIndex, startValue, maxValue);
+            PerformBenchmark(selectedThreadCount, selectedFunctionIndex, startValue, maxValue);
 
         }
 
-        private void PerformBenchmark(int selectedThreadCount,int selectedFunctionIndex, int startValue, int maxValue)
+        private void PerformBenchmark(int selectedThreadCount, int selectedFunctionIndex, int startValue, int maxValue)
         {
             AxisXLabels.Clear();
             Series.Clear();
@@ -79,32 +81,32 @@ namespace Analysis
             var parallelTasksTimes = new ChartValues<double>();
             var syncTimes = new ChartValues<double>();
 
+            List<double> accuracy_list = new List<double>() { 0.1, 0.001, 0.0001 };
 
-
-            for (int i = 10; i <= 200; i += 10)
+            foreach (var accuracy in accuracy_list)
             {
                 Random random = new Random();
 
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
-                double syncSumResult = Integrator.Integrate(functions[selectedFunctionIndex], startValue, maxValue, (double)Math.Abs(maxValue - startValue) / i);
+                double syncSumResult = Integrator.Integrate(functions[selectedFunctionIndex], startValue, maxValue,accuracy);
                 stopwatch.Stop();
                 double syncTime = stopwatch.Elapsed.TotalMilliseconds;
                 syncTimes.Add(syncTime);
 
                 stopwatch.Restart();
-                double threadResult = Integrator.ParallelIntegrateThreads(selectedThreadCount, functions[selectedFunctionIndex], startValue, maxValue, (double)Math.Abs(maxValue - startValue) / i);
+                double threadResult = Integrator.ParallelIntegrateThreads(functions[selectedFunctionIndex], startValue, maxValue, accuracy, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelSumTime = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTimes.Add(parallelSumTime);
 
                 stopwatch.Restart();
-                double taskResult = Integrator.ParallelIntegrateThreads(selectedThreadCount, functions[selectedFunctionIndex], startValue, maxValue, (double)Math.Abs(maxValue - startValue) / i);
+                double taskResult = Integrator.ParallelIntegrateTasks(functions[selectedFunctionIndex], startValue, maxValue, accuracy, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelTasksTime = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTasksTimes.Add(parallelTasksTime);
 
-                AxisXLabels.Add($"кол-во отрезков: {i}");
+                AxisXLabels.Add($"Точность {accuracy}");
             }
 
             Series.Add(new LineSeries
@@ -128,6 +130,7 @@ namespace Analysis
                 PointGeometry = null
             });
 
+            chart.AxisX[0].Labels = AxisXLabels;
 
         }
     }

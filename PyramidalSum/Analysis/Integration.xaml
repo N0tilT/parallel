@@ -21,10 +21,10 @@
             <StackPanel VerticalAlignment="Center">
                 <Label
                     VerticalAlignment="Center"
-                    Content="Количество потоков:"
+                    Content="Задача:"
                     FontSize="15" />
                 <ComboBox
-                    Name="comboBoxThreadCount"
+                    Name="comboBoxFunction"
                     Grid.Row="0"
                     Width="120"
                     Margin="10,10,0,0"
@@ -33,10 +33,10 @@
             <StackPanel VerticalAlignment="Center">
                 <Label
                     VerticalAlignment="Center"
-                    Content="Задача:"
+                    Content="Количество потоков:"
                     FontSize="15" />
                 <ComboBox
-                    Name="comboBoxFunction"
+                    Name="comboBoxThreadCount"
                     Grid.Row="0"
                     Width="120"
                     Margin="10,10,0,0"
@@ -77,7 +77,7 @@
                 <livecharts:SeriesCollection x:Name="SeriesCollection" />
             </lc:CartesianChart.Series>
             <lc:CartesianChart.AxisX>
-                <lc:Axis Title="Количество отрезков" Labels="{Binding AxisXLabels}" />
+                <lc:Axis Title="Точность" Labels="{Binding AxisXLabels}" />
             </lc:CartesianChart.AxisX>
             <lc:CartesianChart.AxisY>
                 <lc:Axis Title="Время (мс)" />
