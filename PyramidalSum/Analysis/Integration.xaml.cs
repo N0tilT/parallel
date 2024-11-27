@@ -59,6 +59,20 @@ namespace Analysis
 
 
         }
+        private void comboBoxFunction_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int selectedFunctionIndex = comboBoxFunction.SelectedIndex;
+            if(selectedFunctionIndex == 1)
+            {
+                textBoxStartValue.Text = "0";
+                textBoxMaxValue.Text = "2";
+            }
+            else
+            {
+                textBoxStartValue.Text = "5";
+                textBoxMaxValue.Text = "10";
+            }
+        }
 
         private void btnRun_Click(object sender, RoutedEventArgs e)
         {
@@ -81,7 +95,7 @@ namespace Analysis
             var parallelTasksTimes = new ChartValues<double>();
             var syncTimes = new ChartValues<double>();
 
-            List<double> accuracy_list = new List<double>() { 0.1, 0.001, 0.0001 };
+            List<double> accuracy_list = new List<double>() { 0.1,0.01, 0.001, 0.0001,0.00001,0.000001,0.0000001 };
 
             foreach (var accuracy in accuracy_list)
             {
@@ -95,7 +109,7 @@ namespace Analysis
                 syncTimes.Add(syncTime);
 
                 stopwatch.Restart();
-                double threadResult = Integrator.ParallelIntegrateThreads(functions[selectedFunctionIndex], startValue, maxValue, accuracy, selectedThreadCount);
+                double threadResult = Integrator.ParallelIntegrateSegmentsTasks(functions[selectedFunctionIndex], startValue, maxValue, accuracy, selectedThreadCount);
                 stopwatch.Stop();
                 double parallelSumTime = stopwatch.Elapsed.TotalMilliseconds;
                 parallelTimes.Add(parallelSumTime);
@@ -111,21 +125,21 @@ namespace Analysis
 
             Series.Add(new LineSeries
             {
-                Title = "Синхронная сумма",
+                Title = "Синхронное интегрирование",
                 Values = syncTimes,
                 PointGeometry = null
             });
 
             Series.Add(new LineSeries
             {
-                Title = $"Параллельная сумма ({selectedThreadCount} потоков)",
+                Title = $"Параллельное интегрирование сегментами ({selectedThreadCount} потоков)",
                 Values = parallelTimes,
                 PointGeometry = null
             });
 
             Series.Add(new LineSeries
             {
-                Title = $"Параллельная сумма задачами ({selectedThreadCount} потоков)",
+                Title = $"Интегрирование с параллельным суммированием ({selectedThreadCount} потоков)",
                 Values = parallelTasksTimes,
                 PointGeometry = null
             });
@@ -133,5 +147,7 @@ namespace Analysis
             chart.AxisX[0].Labels = AxisXLabels;
 
         }
+
+        
     }
 }

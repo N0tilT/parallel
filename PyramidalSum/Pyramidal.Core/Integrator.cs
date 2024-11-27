@@ -13,6 +13,7 @@ namespace Pyramidal.Core
             double result = f(x);
             return double.IsNaN(result) ? 0 : double.IsInfinity(result) ? 0 : result;
         }
+
         public static double Integrate(Func<double, double> func, double start, double end, double eps = 0.001)
         {
             double step = (end - start) / 2;
@@ -34,10 +35,9 @@ namespace Pyramidal.Core
                 S = S * step + S0 / 2;
             }
             while (Math.Abs(S - S0) > eps);
-
             return S;
-
         }
+
         public static double IntegrateSegments(Func<double, double> func, double start, double end, double eps = 0.001, int segments = 1)
         {
             double step = (end - start) / segments;
@@ -81,7 +81,8 @@ namespace Pyramidal.Core
         }
 
 
-        public static double ParallelIntegrateSegmentsTasks(Func<double, double> func, double start, double end, double eps = 0.001, int threadCount = 1)
+        public static double ParallelIntegrateSegmentsTasks(Func<double, double> func,
+            double start, double end, double eps = 0.001, int threadCount = 1)
         {
             double result = 0;
             object lockObj = new object();
@@ -169,52 +170,37 @@ namespace Pyramidal.Core
         }
 
 
-        public static double ParallelIntegrateTasks(Func<double, double> func, double start, double end, double eps = 0.001, int numThreads = 1)
+        public static double ParallelIntegrateTasks(Func<double, double> func, 
+            double start, double end, double eps = 0.001, int numThreads = 1)
         {
             double step = (end - start) / 2;
             double S0 = 0, S = 0;
             bool success = false;
             for (double x = start; x < end; x += step)
-            {
                 S += SafeEvaluate(func, x);
-            }
             S *= step;
-
             object lockObj = new object();
             do
             {
                 S0 = S;
                 step /= 2;
                 S = 0;
-
-                // Количество интервалов для обработки
                 int intervals = (int)((end - start) / (step * 2));
-
-                // Параллельная обработка
                 Parallel.For(0, numThreads, i =>
                 {
                     double threadSum = 0;
-                    // Разделяем работы между потоками
-                    int iterationsPerThread = (intervals + numThreads - 1) / numThreads; // Делим, округляя вверх
+                    int iterationsPerThread = (intervals + numThreads - 1) / numThreads;
                     int startIdx = i * iterationsPerThread;
                     int endIdx = Math.Min(startIdx + iterationsPerThread, intervals);
-
                     for (int j = startIdx; j < endIdx; j++)
                     {
                         double x = start + step + j * step * 2;
                         if (x < end)
-                        {
                             threadSum += SafeEvaluate(func, x);
-                        }
                     }
-
-                    // Суммируем результаты в общем контексте
-                    lock (lockObj) // Используем блокировку для предотвращения гонки
-                    {
+                    lock (lockObj)
                         S += threadSum;
-                    }
                 });
-
                 S = S * step + S0 / 2;
             }
             while (Math.Abs(S - S0) > eps);
